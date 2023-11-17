@@ -3,34 +3,29 @@ from pygame.locals import *
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import math
+import numpy as np
 
-def draw_hyperbolic_cylinder(radius, height, sides):
-    angle_step = 360.0 / sides
-    glBegin(GL_TRIANGLE_FAN)
-    glVertex3f(0, 0, height / 2.0)
-    for i in range(sides + 1):
-        angle = i * angle_step
-        x = radius * math.cos(math.radians(angle))
-        y = radius * math.sin(math.radians(angle))
-        glVertex3f(x, y, height / 2.0)
-    glEnd()
 
-    glBegin(GL_TRIANGLE_FAN)
-    glVertex3f(0, 0, -height / 2.0)
-    for i in range(sides + 1):
-        angle = i * angle_step
-        x = radius * math.cos(math.radians(angle))
-        y = radius * math.sin(math.radians(angle))
-        glVertex3f(x, y, -height / 2.0)
-    glEnd()
+def draw_hyperbolic_cylinder(a, b, height, num_points):
+    vertices = []
+    num_points += 1
+    phi = np.linspace(0, 2 * np.pi, num_points)
+    z = np.linspace(-height / 2.0, height / 2.0, num_points)
 
-    glBegin(GL_QUAD_STRIP)
-    for i in range(sides + 1):
-        angle = i * angle_step
-        x = radius * math.cos(math.radians(angle))
-        y = radius * math.sin(math.radians(angle))
-        glVertex3f(x, y, height / 2.0)
-        glVertex3f(x, y, -height / 2.0)
+    for zi in z:
+        for angle in phi:
+            x = a * np.cosh(zi / height) * np.cos(angle)
+            y = b * np.cosh(zi / height) * np.sin(angle)
+            vertices.append([x, y, zi])
+
+    glBegin(GL_QUADS)
+    for i in range(len(vertices) - num_points):
+        if (i + 1) % num_points == 0:
+            continue
+        glVertex3fv(vertices[i])
+        glVertex3fv(vertices[i + 1])
+        glVertex3fv(vertices[i + num_points + 1])
+        glVertex3fv(vertices[i + num_points])
     glEnd()
 
 
@@ -61,7 +56,7 @@ def main():
 
         glRotatef(1, 3, 1, 1)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT)
-        draw_hyperbolic_cylinder(1, 2, 32)  # Используем новую функцию для рисования цилиндра
+        draw_hyperbolic_cylinder(1, 2, 2, 32)  # Параметры a=1, b=2, height=2 и 32 сегмента
         pygame.display.flip()
         pygame.time.wait(10)
 
